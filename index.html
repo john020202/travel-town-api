@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Town Free Energy</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0;
+        }
+        h1 { color: #1c1e21; }
+        p { color: #606770; }
+        #links-container { 
+            max-width: 500px; 
+            margin: 20px auto; 
+        }
+        .link-card { 
+            background: white; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        .btn { 
+            background: #28a745; 
+            color: white; 
+            text-decoration: none; 
+            padding: 12px 24px; 
+            border-radius: 6px; 
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn:hover { background: #218838; }
+        .date { 
+            color: #888; 
+            font-size: 0.9em; 
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Travel Town Free Energy</h1>
+    <p>Links are automatically checked and updated every 15 minutes.</p>
+    
+    <div id="links-container">
+        <h2>Loading links...</h2>
+    </div>
+
+    <script>
+        // This script automatically pulls the data from your API folder
+        fetch('api/links.json')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('links-container');
+                container.innerHTML = ''; // Clear the loading text
+
+                if (data.length === 0) {
+                    container.innerHTML = '<h3>No links found right now. Check back later!</h3>';
+                    return;
+                }
+
+                // Reverse the list so the newest links are at the very top
+                data.reverse().forEach(item => {
+                    // Format the date to look nice
+                    const dateObj = new Date(item.date_found);
+                    const niceDate = dateObj.toLocaleDateString() + ' at ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    // Create the visual card for each link
+                    const card = document.createElement('div');
+                    card.className = 'link-card';
+                    card.innerHTML = `
+                        <div class="date">Found:<br><b>${niceDate}</b></div>
+                        <a href="${item.url}" target="_blank" class="btn">Claim Energy</a>
+                    `;
+                    container.appendChild(card);
+                });
+            })
+            .catch(error => {
+                document.getElementById('links-container').innerHTML = '<h3>Waiting for the scraper to find the first links...</h3>';
+            });
+    </script>
+
+</body>
+</html>
