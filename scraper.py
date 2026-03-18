@@ -6,6 +6,7 @@ from datetime import datetime
 
 FILE_PATH = "api/links.json"
 
+# Load existing data
 if os.path.exists(FILE_PATH):
     with open(FILE_PATH, "r") as f:
         data = json.load(f)
@@ -19,42 +20,36 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 new_entries = []
 
 try:
-    response = requests.get(TARGET_URL, headers=headers, timeout=10)
+    response = requests.get(TARGET_URL, headers=headers, timeout=15)
     soup = BeautifulSoup(response.text, 'html.parser')
     
+    # 1. We look for every link on the page
     for link in soup.find_all('a', href=True):
         href = link['href']
-        raw_text = link.get_text(strip=True) # This grabs the "25 Energy Gift" text
+        text = link.get_text(strip=True)
         
-        # Block internal site links and social media
-        bad_words = ['simplegameguide.com', 'facebook', 'instagram', 'twitter', 'whatsapp', 't.me', 'reddit']
-        if any(bad in href.lower() for bad in bad_words):
-            continue
-            
-        # If it has the API url OR the text says "Energy"
-        if 'api.traveltowngame.net' in href or 'energy' in raw_text.lower():
+        # 2. STRICT FILTER: Only grab if it contains 'api.traveltowngame.net'
+        # This completely ignores all the #energy-links and social media garbage.
+        if 'api.traveltowngame.net' in href:
             if href not in existing_links:
-                
-                # Clean up the text (removes the "1. " from "1. 25 Energy Gift")
-                clean_text = raw_text.split('. ')[-1] if '. ' in raw_text else raw_text
-                if not clean_text or clean_text == "":
-                    clean_text = "Claim Free Energy"
-                    
+                # We save only the URL and the cleaned energy text
                 new_entries.append({
-                    "text": clean_text, # Saves the text to your database!
+                    "reward_text": text if text else "Free Energy",
                     "url": href,
                     "date_found": datetime.now().isoformat()
                 })
                 existing_links.add(href)
-                
-except Exception as e:
-    print(f"Error: {e}")
 
+except Exception as e:
+    print(f"Scraper error: {e}")
+
+# 3. Save the clean JSON
 if new_entries:
-    data.extend(new_entries)
+    # Add new ones to the top
+    combined_data = new_entries + data
     os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
     with open(FILE_PATH, "w") as f:
-        json.dump(data, f, indent=4)
-    print(f"Success! Grabbed {len(new_entries)} links with their text.")
+        json.dump(combined_data, f, indent=4)
+    print(f"Success! Added {len(new_entries)} real reward links.")
 else:
-    print("No new links found.")
+    print("No NEW reward links found. All links on the page are already in your JSON.")
