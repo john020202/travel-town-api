@@ -2,23 +2,24 @@ name: Travel Town Scraper Auto-Run
 
 on:
   schedule:
-    # This cron job runs the scraper every 6 hours. 
-    # You can change it using crontab.guru (e.g., '0 * * * *' for every hour)
-    - cron: '0 */6 * * *' 
-  workflow_dispatch: # This allows you to click a button to run it manually
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Allows the bot to push the new JSON file to your repo
+      contents: write
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
 
     - name: Setup Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -29,13 +30,11 @@ jobs:
     - name: Run the Scraper Script
       run: python scraper.py
 
-   - name: Commit and Push the New Links
+    - name: Commit and Push the New Links
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        # This tells it to grab any changes safely without crashing
-        git add . 
-        git commit -m "Auto-update Travel Town links" || exit 0 
-        # This tells the bot to merge its work with yours before pushing
-        git pull --rebase 
+        git add .
+        git commit -m "Auto-update Travel Town links" || exit 0
+        git pull --rebase
         git push
