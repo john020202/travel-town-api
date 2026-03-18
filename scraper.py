@@ -22,6 +22,9 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 }
 
+# The ultimate block list. Nothing from these sites will get through.
+BLACKLIST = ['facebook', 'instagram', 'twitter', 'x.com', 'tiktok', 'whatsapp', 't.me', 'reddit', 'apple.com', 'play.google']
+
 new_entries = []
 
 for url in TARGET_URLS:
@@ -31,25 +34,33 @@ for url in TARGET_URLS:
         
         for link in soup.find_all('a', href=True):
             href = link['href']
+            link_text = link.text.lower()
             
-            # THE ULTIMATE FIX: Only grab links that match the exact structure you provided
-            if 'api.traveltowngame.net' in href and href not in existing_links:
-                new_entries.append({
-                    "url": href,
-                    "source_website": url,
-                    "date_found": datetime.now().isoformat()
-                })
-                existing_links.add(href)
+            # Block all social media and chat apps immediately
+            if any(bad in href.lower() for bad in BLACKLIST):
+                continue
+                
+            # If the button visibly says "energy" or "claim" OR the link is a direct API link
+            if 'energy' in link_text or 'claim' in link_text or 'traveltowngame.net' in href.lower():
+                if href not in existing_links:
+                    new_entries.append({
+                        "url": href,
+                        "source_website": url,
+                        "date_found": datetime.now().isoformat()
+                    })
+                    existing_links.add(href)
                     
     except Exception as e:
         print(f"Error scanning: {e}")
 
 if new_entries:
     data.extend(new_entries)
+    
+    # THIS is the line that magically recreates your api folder!
     os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
     
     with open(FILE_PATH, "w") as f:
         json.dump(data, f, indent=4)
-        print(f"Successfully grabbed {len(new_entries)} real reward links!")
+    print(f"Success! Recreated the API folder and found {len(new_entries)} links.")
 else:
-    print("No new api.traveltowngame.net links found.")
+    print("No valid links found. The API folder was not created.")
