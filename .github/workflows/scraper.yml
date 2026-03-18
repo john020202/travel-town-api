@@ -29,11 +29,13 @@ jobs:
     - name: Run the Scraper Script
       run: python scraper.py
 
-    - name: Commit and Push the New Links
+   - name: Commit and Push the New Links
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        git add api/links.json
-        # The '|| exit 0' prevents the action from failing if no new links were found
+        # This tells it to grab any changes safely without crashing
+        git add . 
         git commit -m "Auto-update Travel Town links" || exit 0 
+        # This tells the bot to merge its work with yours before pushing
+        git pull --rebase 
         git push
